@@ -7,7 +7,7 @@ const app = express();
 const port = 5000;
 
 // Connect to MongoDB
-mongoose.connect('mongodb+srv://kirankiran360:EGavoiNs7EojozMo@cluster0.diflmj2.mongodb.net/mydb?retryWrites=true&w=majority', {
+mongoose.connect('mongodb://localhost:27017/key', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -50,7 +50,8 @@ app.post('/api/save', async (req, res) => {
     // Extract the path from the URL if a full URL is provided
     if (path.includes('://')) {
       const urlObj = new URL(path);
-      path = urlObj.pathname;
+      path = urlObj.pathname.toLowerCase()
+      ;
     }
 
     // Replace the existing document if it exists, otherwise insert a new one
@@ -70,21 +71,23 @@ app.post('/api/save', async (req, res) => {
 app.post('/api/rebrand', async (req, res) => {
   try {
     const { url } = req.body;
-    // Check if the URL is a full URL or a path
     let path;
+ 
+    // Check if the URL is a full URL or a path
     try {
-      path = new URL(url).pathname; // Extract path from URL
+      const urlObj = new URL(url);
+      path = urlObj.pathname.toLowerCase(); // Extract path from URL
     } catch (e) {
       if (url.startsWith('/')) {
-        path = url; // It's already a path
+        path = url.toLowerCase(); // It's already a path
       } else {
         throw new Error('Invalid URL or path');
       }
     }
-    console.log(path);
+ 
     const item = await Item.findOne({ path });
     if (item) {
-      res.status(200).json({ path, data: item.data });
+      res.status(200).json({ path: item.path, data: item.data });
     } else {
       res.status(404).json({ error: 'URL not found in database' });
     }
@@ -93,6 +96,8 @@ app.post('/api/rebrand', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+ 
+
 
 // GET route to fetch only paths from items collection
 app.get('/api/paths', async (req, res) => {
